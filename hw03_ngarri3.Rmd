@@ -1,0 +1,205 @@
+---
+title: "hw03_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "9/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+?faithful
+```
+**Ex 1.a**
+```{r}
+x = faithful$waiting
+y = faithful$eruptions
+
+faithful_model = lm(y ~ x, data = faithful)
+summary(faithful_model)
+```
+
+**1.b**
+```{r}
+faithful_model
+```
+β0 is the intercept, which in this case would mean how long the eruption lasts if the waiting time was zero, which is -1.87402. β1 is the slope of the linear model, meaning that for every minute that passes, the duration of the eruption increases by .07563 minutes
+
+**1.c**
+```{r}
+B_0 = -1.87402
+B_1 = .07563
+B_0 + B_1*(80)
+```
+I am not totally confident in this prediciton because the linear model that I produced is a rough estimate, and it does not go through a majority of the data points. It is only good enough to predict a very general trend. 
+
+**1.d**
+```{r}
+B_0 + B_1*(120)
+```
+Again I am not totally confident in this prediciton for the same reasons that I stated in 1.c, but additionally because 120 minutes is out of the range of our x axis. It is very hard to extrapolate and remain confident, especially with a simple linear model. 
+
+**1.e**
+```{r}
+deviance(faithful_model)
+```
+the RSS is 66.56178
+
+**1.f**
+```{r}
+plot(y ~ x, xlab= 'Waiting Time', ylab= 'Eruption Time', main = 'Eruption Time of Old Faithful vs. Waiting Time')
+abline(faithful_model, lwd = 3, col = 'red')
+```
+
+**1.g**
+```{r}
+summary(faithful_model)$r.squared
+```
+
+**2.a**
+```{r}
+get_sd_est <- function(model_resid, mle=FALSE){
+  if(!mle){
+    ret = sum(model_resid**2) / (length(model_resid) - 2)
+    ret = sqrt(ret)
+    return(ret)
+  }else{
+    ret = sum(model_resid**2) / length(model_resid)
+    ret = sqrt(ret)
+    return(ret)
+  }
+  
+}
+```
+**2.b**
+```{r}
+get_sd_est(residuals(faithful_model))
+```
+**2.c**
+```{r}
+get_sd_est(residuals(faithful_model), TRUE)
+```
+**2.d**
+```{r}
+summary(faithful_model)$sigma
+```
+
+**3.a**
+```{r}
+birthday = 19990720
+set.seed(birthday)
+sim_slr = function(x, b0, b1, sigma) {
+  n = length(x)
+  epsilon = rnorm(n, mean = 0, sd = sigma)
+  y = b0 + b1 * x + epsilon
+  data.frame(predictor = x, response = y)
+}
+x = runif(n = 50, 0, 10)
+sim_data = sim_slr(x, b0= 3, b1= -7, sigma= 2)
+```
+
+**3.b**
+```{r}
+simdata_model = lm(response ~ predictor, data = sim_data)
+coef(simdata_model)
+```
+I would expect the intercept to be close to my b0 and the predictor to be close to b1, and these outputs do come very close to those numbers, so yes this is close to what I'd expect. Although I did exect the intercept to be a little close to b0.
+
+**3.c**
+```{r}
+plot(sim_data, xlab= 'Response', ylab= 'Predictor', main= 'Response vs. Predictor')
+abline(simdata_model, col= 'blue')
+```
+
+**3.d**
+```{r}
+x = runif(n=50, 0, 10)
+beta_hat_1 = rep(0,2000)
+for (i in 1:2000){
+  sim_data_temp = sim_slr(x, 3, -7, 2)
+  sim_fit_temp = lm(response ~ predictor, data = sim_data_temp)
+  beta_hat_1[i] = coef(sim_fit_temp)[2]
+}
+```
+
+**3.e**
+```{r}
+mean(beta_hat_1)
+sd(beta_hat_1)
+```
+The mean looks familiar. The mean is very close to the b1 value of -7. 
+
+**3.f**
+```{r}
+hist(beta_hat_1, breaks= 50, xlab= 'Predictor', ylab= 'Response', main= 'Beta Hat 1')
+```
+
+The shape of this histogram roughly follows the normal curve, with its mean falling close to -7. This makes sense, since the SD was so close to zero.
+
+**4.a**
+```{r}
+birthday = 19990720
+set.seed(birthday)
+x = runif(n=25, 0, 10)
+beta_hat_1 = rep(0,1500)
+for (i in 1:1500){
+  sim_data_temp = sim_slr(x, 10, 0, 1)
+  sim_fit_temp = lm(response ~ predictor, data = sim_data_temp)
+  beta_hat_1[i] = coef(sim_fit_temp)['predictor']
+}
+```
+
+**4.b**
+```{r}
+hist(beta_hat_1, breaks = 50, xlab= 'Predictor', ylab= 'Response', main= 'Beta Hat 1')
+```
+
+The shape of this histogram roughly follows the normal curve
+
+**4.c**
+```{r}
+skeptic <- read.csv("~/Desktop/skeptic.csv")
+beta_1_hat= lm(response ~ predictor, data= skeptic)
+coef(beta_1_hat)
+```
+
+**4.d**
+```{r}
+hist(beta_hat_1, breaks = 50, xlab= 'Predictor', ylab= 'Response', main= 'Beta Hat 1')
+abline(.15, col= 'red')
+```
+
+**5.a**
+```{r}
+goalies <- read.csv("~/Downloads/goalies.csv")
+winmin_model = lm(W ~ MIN, data = goalies)
+RMSEwinmin = sqrt(sum((winmin_model$residuals)**2/length(goalies$W)))
+RMSEwinmin
+plot(W ~ MIN, data = goalies, xlab= 'Minutes', ylab= 'Wins', main = 'Wins vs. Minutes')
+abline(winmin_model, col = 'red')
+```
+
+**5.b**
+```{r}
+wingoal_model = lm(W ~ GA, data = goalies)
+RMSEwingoal = sqrt(sum((wingoal_model$residuals)**2/length(goalies$W)))
+RMSEwingoal
+plot(W ~ GA, data = goalies, xlab= 'Goals Against', ylab= 'Wins', main = 'Wins vs. Goals Against')
+abline(wingoal_model, col = 'red')
+```
+
+**5.c**
+```{r}
+winshut_model = lm(W ~ SO, data = goalies)
+RMSEwinshut = sqrt(sum((winshut_model$residuals)**2/length(goalies$W)))
+RMSEwinshut
+plot(W ~ SO, data = goalies, xlab= 'Shutouts', ylab= 'Wins', main = 'Wins vs. Shutouts')
+abline(winshut_model, col = 'red')
+```
+
+**5.d**
+The predictor that is most helpful for predicting wins is minutes because it has the lowest RMSE. 
+
+

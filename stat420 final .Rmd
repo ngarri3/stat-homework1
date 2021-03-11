@@ -1,0 +1,89 @@
+---
+title: "stat420 project"
+author: "Nora Garrity- ngarri3"
+date: "12/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+election_by_county <- read.csv("~/Downloads/county_results.csv") 
+```
+
+```{r}
+columns_to_remove = c(1:44, 47:71, 97:105, 107, 108, 125:161)
+county_results = election_by_county[!(election_by_county$State %in% c("") | election_by_county$name_16 %in% c("")), -columns_to_remove]
+dem_results = na.omit(county_results[, -c(1, 42:44)])
+rep_results = na.omit(county_results[, -c(2, 42:44)])
+```
+
+```{r}
+county_education_model = lm(dem16_frac2 ~ Less.Than.High.School + At.Least.Bachelor.s.Degree + White.not.Latino.Population, data = county_results)
+summary(county_education_model)
+```
+
+```{r} 
+#(bic model backwards)
+county_model = lm(dem16_frac2 ~ ., data = dem_results)
+n = length(resid(county_model))
+county_model_back_bic = step(county_model, direction = "backward", k = log(n), trace = 0)
+coef(county_model_back_bic)
+```
+
+
+```{r} 
+#(bic model forwards)
+county_model_all = lm(dem16_frac2 ~ ., data = dem_results)
+n = length(resid(county_model_all))
+county_model_zero = lm(dem16_frac2 ~ 1, data=dem_results)
+county_model_forward_bic = step(county_model, direction = "forward", scope = list(lower = county_model_zero, upper = county_model_all),
+k = log(n), trace = 0)
+coef(county_model_forward_bic)
+
+```
+
+
+```{r} 
+#(full additive model)
+county_additive_full = lm(dem16_frac2 ~ ., data = county_results)
+summary(county_additive_full)
+
+```
+
+```{r} 
+#ANOVA
+anova(county_model_forward_bic, county_model_back_bic)
+```
+
+```{r}
+#AIC Model
+county_dem_additive_model = lm(dem16_frac2 ~ ., data = dem_results)
+county_dem_additive_model_back_aic = step(county_dem_additive_model, direction = "backward", trace = 0)
+coef(county_dem_additive_model_back_aic)
+
+```
+
+```{r}
+county_dem_additive_model_start = lm(dem16_frac2 ~ 1, data = dem_results)
+county_dem_additive_model_forw_aic = step(county_dem_additive_model, 
+                                          scope = dem16_frac2 ~ .,
+                                          direction = "forward")
+coef(county_dem_additive_model_forw_aic)
+```
+
+```{r}
+anova(county_dem_additive_model_back_aic, county_dem_additive_model_forw_aic)
+```
+
+
+```{r}
+#leverage
+length(hatvalues()[hatvalues() > 2 * mean(hatvalues())])
+#influence
+length(rstandard()[abs(rstandard()) > 2])
+#outlier
+length(cooks.distance()[cooks.distance() > 4/ length(cooks.distance())])
+```

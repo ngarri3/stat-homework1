@@ -1,0 +1,149 @@
+---
+title: "hw9_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "11/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+function.1a = function(model, pointcol = 'red', linecol = 'blue'){
+  plot(fitted(model), resid(model), xlab = 'Fitted', ylab = 'Residuals', main = 'Fitted vs. Residual', col = pointcol)
+  abline(h = 0, col = linecol)
+}
+```
+
+**1.b**
+```{r}
+function.1b = function(model, pointcol = 'red', linecol = 'blue'){
+  qqnorm(resid(model), col = pointcol)
+  qqline(resid(model), col = linecol)
+}
+```
+
+**1.c**
+```{r}
+set.seed(114)
+test_data = data.frame(x = runif(n = 20, min = 0, max = 10),
+y = rep(x = 0, times = 20))
+test_data$y = with(test_data, 5 + 2 * x + rnorm(n = 20))
+test_fit = lm(y ~ x, data = test_data)
+
+function.1a(test_fit)
+function.1b(test_fit)
+```
+
+**2.a**
+```{r}
+library(faraway)
+
+model_2a = lm(Fertility ~ ., data = swiss)
+coef(model_2a)
+```
+
+**2.b**
+```{r}
+library(lmtest)
+
+bptest(model_2a)
+```
+The Breusch- Pagan test shows that the P value is relatively large, so we do not reject the null hypothesis that variance is constant, meaning that the constant variance assumption has not been violated.
+
+**2.c**
+```{r}
+shapiro.test(resid(model_2a))
+```
+The Shapiro- Wilk normality test has a large p value as well, so we do not reject the null hypothesis. This means that the normality assumption has not been violated
+
+**2.d**
+```{r}
+swiss[hatvalues(model_2a) > 2* mean(hatvalues(model_2a)),]
+```
+La Valle V. and De Geneve are points of high leverage, as they are the observations that follow the heuristic for leverage
+
+**2.e**
+```{r}
+swiss[cooks.distance(model_2a) > 4/ length(cooks.distance(model_2a)),]
+```
+Porrentruy, Sierre, Neuchatel, Rive Droite, and Rive Gauche are all influential observations, as they follow the heuristic for influence. 
+
+**2.f**
+```{r}
+swiss.noninfluential.data = swiss[cooks.distance(model_2a) <= 4 / length(cooks.distance(model_2a)),]
+model_2f = lm(Fertility ~ ., data = swiss.noninfluential.data)
+coef(model_2f)- coef(model_2a) 
+```
+We can see here that the original model underestimated the values for agriculture, examination, and catholic. It overestimated the values for educaation and infant mortality. This is enough to say that the above named influential observations are significant. 
+
+**2.g**
+```{r}
+swiss.influential.data = swiss[cooks.distance(model_2a) > 4/ length(cooks.distance(model_2a)),] 
+
+predict(model_2a, newdata = swiss.influential.data) 
+predict(model_2f, newdata = swiss.influential.data)
+
+predict(model_2a, newdata = swiss.influential.data) - swiss.influential.data$Fertility
+predict(model_2f, newdata = swiss.influential.data) - swiss.influential.data$Fertility
+
+```
+The differences here show that the model_2f has just slightly higher residuals than model_2a. Additionally, model_2f makes slightly higher predicitons than model_2a. 
+
+**3**
+```{r}
+concrete <- read.csv("~/Downloads/concrete.csv")
+
+model_3 = lm(strength ~ ., data = concrete)
+
+bptest(model_3)
+shapiro.test(resid(model_3))
+
+concrete [hatvalues(model_3) > 2* mean(hatvalues(model_3)),]
+
+sum(abs(rstandard(model_3)) > 2)
+
+concrete[cooks.distance(model_3) > 4/ length(cooks.distance(model_3)),]
+
+model_3_noninfluntial = lm(strength ~ . , data = concrete, subset = cooks.distance(model_3) <= 4 / length(cooks.distance(model_3)))
+coef(model_3_noninfluntial) - coef(model_3)
+```
+So what we can see here is that there are no violations of the constant variance assumption or the normality assumption. There are no high leverance assumptions. There is one outlier and one influential point. The influential point's effect on the estimates is insignificant, as we have very very small differences between the model with the influential point and the model with the influential point. 
+
+**4.a**
+```{r}
+n= 50
+num_sims = 1000
+p_val_1 = rep(0, num_sims)
+p_val_2 = rep(0, num_sims)
+birthday = 19990720
+set.seed(birthday)
+
+x_1 = runif(n, 0, 10)
+x_2 = runif(n, -5, 5)
+
+for(i in 1:num_sims){
+  y_1 = 2 + x_1 + 0 * x_2 + rnorm(n = n, mean = 0, sd = 1)
+  y_2 = 2 + x_1 + 0 * x_2 + rnorm(n = n, mean = 0, sd = abs(x_2))
+  fit_1 = lm(y_1 ~ x_1 + x_2)
+  fit_2 = lm(y_2 ~ x_1 + x_2)
+  p_val_1[i] = summary(fit_1)$coefficients[3,4]
+  p_val_2[i] = summary(fit_2)$coefficients[3,4]
+}
+
+```
+
+**4.b**
+```{r}
+mean(p_val_1 < .05)
+mean(p_val_1 < .1)
+mean(p_val_2 < .05)
+mean(p_val_2 < .1)
+```
+The proportion of p values for fit_1, the simulation that does not violate any assumptions, are smaller than the proportion of p values for fit_2,the simulation that does violate assumptions. This goes to show that for the simulation that does not violate assumptions, there are less instances that the estimate rejects the null. This is what we expected. 
+
+
+
+

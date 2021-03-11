@@ -1,0 +1,256 @@
+---
+title: "hw8_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "11/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+epa2015 <- read.csv("~/Downloads/epa2015.csv")
+
+str(epa2015)
+class(epa2015$type)
+```
+Yes, type is a factor
+
+**1.b**
+```{r}
+scatterplot = function(){
+plot(CO2 ~ horse, data = subset(epa2015, type == 'Both'), col = 'green')
+points(CO2 ~ horse, data = subset(epa2015, type == 'Car'), col = 'blue')
+points(CO2 ~ horse, data = subset(epa2015, type == 'Truck'), col = 'red')
+}
+
+scatterplot()
+```
+Green is Both, Red is Truck, Blue is Car. 
+
+**1.c**
+```{r}
+SLR_model_CO2_horse = lm(CO2 ~ horse, data = epa2015)
+scatterplot()
+abline(SLR_model_CO2_horse)
+
+as.numeric(coef(SLR_model_CO2_horse)['horse'])
+subaru_impreza_data = data.frame(horse = 148)
+predict(SLR_model_CO2_horse, subaru_impreza_data, interval = 'confidence')
+```
+
+For the regression line added to the scatterplot, the regression line seems to vaguely follow the general trend, but would not be considered a good predictor of CO2 based on horse because so many points are so far +/- the line. 
+
+The estimate for avg change in CO2 for one unit increase in horse for vehicle type truck is 0.5498996
+
+The 95% confidence interval is [232.2978, 239.9082]
+
+**1.d**
+```{r}
+additive_CO2_horse_type = lm(CO2 ~ horse + type, data = epa2015)
+
+Both_line = coef(additive_CO2_horse_type)[1]
+Car_line = coef(additive_CO2_horse_type)[1] + coef(additive_CO2_horse_type)[3]
+Truck_line = coef(additive_CO2_horse_type)[1] + coef(additive_CO2_horse_type)[4]
+
+slope_all_type = coef(additive_CO2_horse_type)[2]
+
+scatterplot()
+abline(Both_line, slope_all_type, col = 'green', lwd = 3)
+abline(Truck_line, slope_all_type, col = 'red', lwd = 3)
+abline(Car_line, slope_all_type, col = 'blue', lwd = 3)
+
+as.numeric(coef(additive_CO2_horse_type)['horse'])
+subaru_impreza_data2 = data.frame(horse = 148, type = 'Both')
+predict(additive_CO2_horse_type, subaru_impreza_data2, interval = 'confidence')
+```
+
+Again, I feel that the regression lines seem to vaguely follow the general trend, and the lines are better fitted per type now, but they are still not something I would use to accurately predict with.
+
+The estimate for avg change in CO2 for one unit increase in horse for vehicle type truck is 0.5611008
+
+The 95% confidence interval is [232.1156, 245.9345]
+
+**1.e**
+```{r}
+additive_CO2_horse_type2 = lm(CO2 ~ horse * type, data = epa2015)
+
+Both_line = coef(additive_CO2_horse_type2)[1]
+Car_line = coef(additive_CO2_horse_type2)[1] + coef(additive_CO2_horse_type2)[3]
+Truck_line = coef(additive_CO2_horse_type2)[1] + coef(additive_CO2_horse_type2)[4]
+
+Both_slope = coef(additive_CO2_horse_type)[2]
+Car_slope = coef(additive_CO2_horse_type2)[2] + coef(additive_CO2_horse_type2)[5]
+Truck_slope = coef(additive_CO2_horse_type2)[2] + coef(additive_CO2_horse_type2)[6]
+
+scatterplot()
+abline(Both_line, Both_slope, col = 'green', lwd = 3)
+abline(Truck_line, Truck_slope, col = 'red', lwd = 3)
+abline(Car_line, Car_slope, col = 'blue', lwd = 3)
+
+as.numeric(coef(additive_CO2_horse_type2)['horse'] + coef(additive_CO2_horse_type2)['horse:typeTruck'])
+subaru_impreza_data3 = data.frame(horse = 148, type = 'Both')
+predict(additive_CO2_horse_type2, subaru_impreza_data3, interval = 'confidence')
+
+```
+
+The slopes have slightly changed to afford a better prediction.
+
+The estimate for avg change in CO2 for one unit increase in horse for vehicle type truck is 0.7013883
+
+The 95% confidence interval is [223.4375, 249.8304]
+
+**1.f**
+Based on the plots, the interaction model is the best, as the lines give the closest predicitons out of the three.
+
+**1.g**
+```{r}
+anova(SLR_model_CO2_horse, additive_CO2_horse_type)
+```
+The additive model is preffered, as the p val is very low.
+
+**1.h**
+```{r}
+anova(additive_CO2_horse_type, additive_CO2_horse_type2)
+```
+The interaction model is preffered, as the p val is very low. 
+
+**2.a**
+```{r}
+hospital <- read.csv("~/Downloads/hospital.csv") 
+str(hospital)
+class(hospital$Care)
+class(hospital$Race)
+levels(hospital$Care)
+levels(hospital$Race)
+```
+Both are factors. 
+
+**2.b**
+```{r}
+additive_days = lm(Days ~ Charges + Pressure + Care + Race, data = hospital)
+additive_days
+```
+The reference levels chosen for Care and Race and High and Non-White, respectively. 
+
+**2.c**
+```{r}
+days_interactions = lm(Days ~ Charges + Pressure + Care + Race + Care:Charges + Care:Pressure, data = hospital)
+anova(additive_days, days_interactions)
+```
+This model is prefferable to the additive model at alpha = .01
+
+**2.d**
+```{r}
+days_interactions2 = lm(Days ~ Charges + Pressure + Care + Race + Care:Charges + Care:Pressure + Race:Charges + Race:Pressure, data = hospital)
+anova(additive_days, days_interactions2)
+```
+This model is prefferable to the additive model at alpha = .01
+
+**2.e**
+```{r}
+as.numeric(coef(days_interactions2)['Pressure'] + coef(days_interactions2)['Pressure:Racewhite'])
+```
+
+**2.f**
+```{r}
+days_interactions3 = lm(Days ~ Charges * Pressure * Care * Race, data = hospital)
+anova(days_interactions2, days_interactions3)
+```
+This model is more statistically significant than the model in 1.d \
+
+**3.a**
+```{r}
+fish <- read.csv("~/Downloads/fish.csv")
+
+fish_interaction = lm(Weight ~ Length1 * HeightPct * WidthPct, data = fish)
+fish_interaction
+```
+
+**3.b**
+```{r}
+small_model_fish = lm(Weight ~ Length1 + HeightPct * WidthPct, data = fish)
+anova(small_model_fish, fish_interaction)
+```
+Null Hypothesis: Beta4 = Beta5 = Beta7 = 0
+
+Alternate Hypothesis: atleast one of Beta4, Beta5, and Beta7 are not 0
+
+Test Stat: 16.367
+
+Pval: 2.972e-09
+
+Decision: reject the null hypothesis at alpha = .05, accept the alternate hypothesis 
+
+I preffer the interaction model.
+
+**3.c**
+```{r}
+coef(fish_interaction)['Length1'] + coef(fish_interaction)['Length1:HeightPct'] * 20 + coef(fish_interaction)['Length1:WidthPct'] * 10 + coef(fish_interaction)['Length1:HeightPct:WidthPct'] * 20 * 10
+```
+
+**3.d**
+```{r}
+coef(small_model_fish)['Length1']
+```
+
+**4**
+```{r}
+n = 16
+ex4 = data.frame(
+groups = c(rep("A", n / 2), rep("B", n / 2)),
+values = rep(0, n))
+str(ex4)
+
+ex4$values = rnorm(n, mean = 10, sd = 3) # simualte data
+summary(lm(values ~ groups, data = ex4))
+
+t.test(values ~ groups, data = ex4, var.equal = TRUE)
+
+num_sims = 100
+lm_t = rep(0, num_sims)
+lm_p = rep(0, num_sims)
+tt_t = rep(0, num_sims)
+tt_p = rep(0, num_sims)
+```
+
+**4.a**
+```{r}
+library(broom)
+set.seed(670947948)
+
+for(i in 1:num_sims){
+  ex4$values = rnorm(n, 10, 3)
+  lm_t[i]= summary(lm(formula = values ~ groups, data = ex4))$coefficients[2,3]
+  lm_p[i]= summary(lm(formula = values ~ groups, data = ex4))$coefficients[2,4]
+  tt_t[i]= glance(t.test(values ~ groups, data = ex4, var.equal = TRUE))$statistic
+  tt_p[i]= glance(t.test(values ~ groups, data = ex4, var.equal = TRUE))$p.value
+}
+```
+
+**4.b**
+```{r}
+mean(lm_t == tt_t)
+```
+
+**4.c**
+```{r}
+mean(lm_p == tt_p)
+```
+
+**4.d**
+```{r}
+all.equal(lm_p, tt_p)
+?all.equal
+```
+The result of running this code is 'TRUE', which means that there is no difference between lm_p and tt_p, which are the pvalues for the two tests
+
+**4.e**
+```{r}
+all.equal(tt_t, lm_t)
+all.equal(abs(tt_t), abs(lm_t))
+```
+The t statistics tt_t and lm_t are not equal, but their absolute values are equal. This is because the lm test and the tt test chose opposite values for A and B, so it makes sense that their p values would be the same with different signs. 
+

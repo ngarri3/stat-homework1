@@ -1,0 +1,314 @@
+---
+title: "hw04_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "10/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+faithful_model = lm(eruptions ~ waiting, data = faithful)
+summary(faithful_model)$coefficients
+```
+Null Hypothesis: Beta Hat 1 equals 0 (no significant linear relationship)
+Alternative Hypothesis: Beta Hat 1 does not equal 0 (significant linear relationship)
+T value: 34.08904
+P value: 8.129959e-100
+Decision: reject null hypothesis, as the p value is below alpha = .01
+Therefore, we can conclude that there is a significant linear relationship between eruption duration and waiting time. 
+
+**1.b**
+```{r}
+confint(faithful_model, level = .99)
+```
+The confidence interval is [.0698727, .0813832], meaning that theres a 99% chance that Beta Hat 1, aka the slope of the regression line, is between this interval.
+
+**1.c**
+```{r}
+confint(faithful_model, level = .9)
+```
+The confidence interval is [-2.13833519, -1.60969678], meanng that there is a 90% chance that Beta Hat 0, AKA the intercept of the regression equation, is between this interval.
+
+**1.d**
+```{r}
+predict(faithful_model, newdata = data.frame(waiting = c(75, 80)),
+        interval = c('confidence'), level = .95)
+```
+```{r}
+3.860002 - 3.736159
+4.247592 - 4.104848
+```
+The interval for 80 sec duration time has a width of .1427, while the interval for the 75 sec duration time has a width of .1238. Therefore I can conclude that the 80 sec duratin time has the wider interval. This is because the standard error increases as the duration time increases. 
+
+**1.e**
+```{r}
+predict(faithful_model, newdata = data.frame(waiting = c(75, 100)),
+        interval = c('prediction'), level = .95)
+```
+This means that the interval for 75 sec is [2.818592, 4.777569] and the interval for 100 sec is [4.701239, 6.676319]
+
+**1.f**
+```{r}
+grid = seq(min(faithful$waiting), max(faithful$waiting), by = .01)
+conf_band = predict(faithful_model, 
+                    newdata = data.frame(waiting = grid), 
+                    interval = 'confidence', level = .95)
+predict_band = predict(faithful_model, 
+                       newdata = data.frame(waiting = grid), 
+                       interval = 'prediction', level = .95)
+plot(eruptions ~ waiting, data =  faithful, xlab = 'Waiting Time', ylab = 'Eruption Duration', main = 'Waiting Time vs. Eruption Duration')
+abline(faithful_model, col = 'blue')
+lines(grid, conf_band[,'lwr'], col = 'red')
+lines(grid, conf_band[,'upr'], col = 'red')
+lines(grid, predict_band[,'lwr'], col = 'red')
+lines(grid, predict_band[,'upr'], col = 'red')
+points(mean(faithful$waiting), mean(faithful$eruptions))
+```
+
+**2.a**
+```{r}
+library(faraway)
+cholesterol_model = lm(chol ~ weight, data = diabetes)
+cholesterolAnova = anova(cholesterol_model)
+cholesterolAnova['weight',]
+```
+Null Hypothesis: Beta Hat 1 equals 0 (no significant linear relationship)
+Alternative Hypothesis: Beta Hat 1 does not equal 0 (significant linear relationship)
+F value: 1.7932
+P value: .1813
+Decision: fail to reject null hypothesis, as the p value is above alpha = .05
+Therefore, we can conclude that there is not sufficient evidence to suggest that there is a significant linear relationship between cholesterol and weight.
+
+**2.b**
+```{r}
+hdl_model = lm(hdl ~ weight, data = diabetes)
+hdlAnova = anova(hdl_model)
+hdlAnova['weight',]
+```
+Null Hypothesis: Beta Hat 1 equals 0 (no significant linear relationship)
+Alternative Hypothesis: Beta Hat 1 does not equal 0 (significant linear relationship)
+F value: 36.909
+P value: 2.891e-09
+Decision: reject null hypothesis, as the p value is below alpha = .05
+Therefore, we conclude that there is sufficient evidence to suggest that there is a significant linear relationship between HDL and weight.
+
+**3**
+```{r}
+goalies <- read.csv("~/Downloads/goalies.csv")
+goalies_model = lm(W ~ MIN, data = goalies)
+goalies_model_data = summary(goalies_model)$coefficients
+
+beta_hat_1 = goalies_model_data[2,1]
+beta_hat_1
+beta_hat_1_error = goalies_model_data[2,2]
+beta_hat_1_error
+t_statistic = (beta_hat_1 - .008)/ beta_hat_1_error
+t_statistic
+degree_freedom = length(resid(goalies_model)) -2
+degree_freedom
+p_val = pt(abs(t_statistic), df = degree_freedom, lower.tail = FALSE)
+p_val
+```
+Beta Hat 1: 0.007845997
+Standard Error of Beta Hat: 5.070963e-05
+T Value: -3.036956
+Degrees of Freedom: 711
+P Value: 0.002477199
+Decision: reject the null hypothesis, as the p value is less than alpha = .01 
+
+**4.a**
+```{r}
+uin = 670947948
+set.seed(uin)
+n = 50
+x = seq(0, 20, length = n)
+Sxx = sum((x-mean(x))**2)
+beta_hat_0 = 4
+beta_hat_1 = .5
+sigma = 5
+
+var_beta_hat_1 = sigma ** 2 / Sxx
+var_beta_hat_1
+var_beta_hat_0 = (sigma ** 2) * (1/n + mean(x)**2 / Sxx)
+var_beta_hat_0
+
+num_samples = 1500
+beta_0_hats = rep(0, num_samples)
+beta_1_hats = rep(0, num_samples)
+
+for(i in 1:num_samples){
+  eps = rnorm(n, mean = 0, sd = sigma)
+  y = beta_hat_1 * x + beta_hat_0 + eps
+  
+  sim_model = lm(y ~x)
+  
+  beta_0_hats[i] = coef(sim_model)[1]
+  beta_1_hats[i] = coef(sim_model)[2]
+}
+```
+
+**4.b**
+```{r}
+beta_hat_1
+```
+
+**4.c**
+```{r}
+sd_beta_hat_1 = sqrt(var_beta_hat_1)
+sd_beta_hat_1
+```
+
+**4.d**
+```{r}
+mean(beta_1_hats)
+```
+This does make sense, as it is very close to the expected value of Beta Hat 1, which is .5
+
+**4.e**
+```{r}
+sd(beta_1_hats)
+```
+This does make sense, as it is very close to the value I got in 4.c
+
+**4.f**
+```{r}
+beta_hat_0
+```
+
+**4.g**
+```{r}
+sd_beta_hat_0 = sqrt(var_beta_hat_0)
+sd_beta_hat_0
+```
+
+**4.h**
+```{r}
+mean(beta_0_hats)
+```
+This does make sense, as it is very close to the expected value of Beta Hat 0, which is 4
+
+**4.i**
+```{r}
+sd(beta_0_hats)
+```
+This does make sense, as it is very close to the value I got in 4.g
+
+**4.j**
+```{r}
+hist(beta_1_hats, prob = TRUE, xlab = 'Beta Hat 1', ylab = 'Density', main = 'Simulated Values of Beta Hat 1', ylim = c(0,3.5))
+curve(dnorm(x, mean = beta_hat_1, sd = sqrt(var_beta_hat_1)), col = 'red', add = TRUE)
+```
+
+**4.k**
+```{r}
+hist(beta_0_hats, prob = TRUE, xlab = 'Beta Hat 0', ylab = 'Density', main = 'Simulated Values of Beta Hat 0', ylim = c(0,.3))
+curve(dnorm(x, mean = beta_hat_0, sd = sqrt(var_beta_hat_0)), col = 'red', add = TRUE)
+```
+
+**5.a**
+```{r}
+uin = 670947948
+set.seed(uin)
+n = 20
+x = seq(-5, 5, length = n)
+
+Sxx1 = sum((x - mean(x)) ^2)
+beta_0 = 1
+beta_1 = 3
+sigma = 4
+
+var_beta_hat_1 = sigma ** 2 / Sxx1
+var_beta_hat_0 = (sigma ** 2) * (1/n + mean(x)**2 / Sxx1)
+
+beta_0_hats = rep(0, 2000)
+se_hats = rep(0, 2000)
+
+for(i in 1:2000){
+  eps = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1 * x + eps
+  
+  sim_model = lm (y ~ x)
+  
+  beta_0_hats[i] = coef(sim_model)[1]
+  se_hats[i] = summary(sim_model)$sigma
+}
+```
+
+**5.b**
+```{r}
+lower_90 = rep(0, 2000)
+upper_90 = rep(0, 2000)
+
+temp = 1- .05
+critical_val = qt(temp, df = n-2)
+for (i in 1:2000){
+  lower_90[i] = beta_0_hats[i] - critical_val * se_hats[i] *sqrt((1/n) + ((mean(x)**2)/Sxx1))
+  upper_90[i] = beta_0_hats[i] + critical_val * se_hats[i] *sqrt((1/n) + ((mean(x)**2)/Sxx1))
+  
+}
+```
+
+**5.c**
+```{r}
+number = 0
+for (i in 1:2000)
+  if (beta_0 <= upper_90[i] & beta_0 >= lower_90[i]){
+    number = number + 1
+  }
+number
+(number/ 2000)
+```
+
+**5.d**
+```{r}
+number = 0
+beta_0_0 = 0
+for(i in 1:2000){
+  if (beta_0_0 > upper_90[i] | beta_0_0 < lower_90[i]){
+    number = number + 1
+  }
+}
+(number / 2000)
+```
+
+**5.e**
+```{r}
+lower_99 = rep(0, 2000)
+upper_99 = rep(0, 2000)
+temp = 1 - .005
+critical_val = qt(temp, df= n-2)
+for(i in 1:2000){
+  lower_99[i] = beta_0_hats[i] - critical_val * se_hats[i] *sqrt((1/n) + ((mean(x)**2)/Sxx1))
+  upper_99[i] = beta_0_hats[i] + critical_val * se_hats[i] *sqrt((1/n) + ((mean(x)**2)/Sxx1))
+}
+```
+
+**5.f**
+```{r}
+number = 0
+for (i in 1:2000)
+  if (beta_0 <= upper_99[i] & beta_0 >= lower_99[i]){
+    number = number + 1
+  }
+number
+(number/ 2000)
+```
+
+**5.g**
+```{r}
+number = 0
+beta_0_0 = 0
+for(i in 1:2000){
+  if (beta_0_0 > upper_99[i] | beta_0_0 < lower_99[i]){
+    number = number + 1
+  }
+}
+(number / 2000)
+```
+
+
+

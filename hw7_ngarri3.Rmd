@@ -1,0 +1,175 @@
+---
+title: "hw7_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "10/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1**
+```{r}
+cookies <- read.csv("~/Downloads/cookies.csv")
+cookies$brand = as.factor(cookies$brand)
+plot(rating ~ brand, data = cookies)
+
+cookieAnova = aov(rating ~ brand, data = cookies)
+summary(cookieAnova)
+TukeyHSD(cookieAnova, conf.level = .9)
+```
+
+The ANOVA test summary shows that the pvalue is .0864, which is less than alpha = .1, so we reject the null hypothesis that ratings are independent of recipes, and accept the alternative hypothesis that ratings and recipes have a significant relationship. From the Tukey Honest Significance difference, we see that C and B have a pvalue less than alpha = .1, and therefore have different means. We reject the null hypothesis that B and C have the same mean and say that C has a higher mean than B. From the boxplot I can tell that C clearly has the highest average rating, so I would use C. 
+
+**2**
+```{r}
+concrete <- read.csv("~/Downloads/concrete.csv")
+concrete$curing = as.factor(concrete$curing)
+concrete$curing
+concrete$cement
+
+par(mfrow = c(1,2))
+with(concrete, interaction.plot(curing, cement, strength, col = 1:4))
+
+with(concrete, interaction.plot(cement, curing, strength, col = 1:4))
+```
+
+The first graph shows no interaction, as the lines do not cross. The second graph shows some crossing of lines, and we will see how significant the interaction is shortly. 
+
+```{r}
+summary(aov(strength ~ (curing * cement), data= concrete))
+summary(aov(strength ~ (curing + cement), data= concrete))
+```
+So we can say that the interaction is not significant at alpha = .05 because none of the pvalues given are greater than alpha. Therefore we go for the additive model. 
+
+```{r}
+concrete.additive = (aov(strength ~ (curing + cement), data= concrete))
+
+table.concrete = expand.grid(curing = unique(concrete$curing), cement = unique(concrete$cement))
+
+estimated.means = function(model, table) {
+  matrix.means = matrix(predict(model, table), nrow = 4, ncol = 3, byrow = TRUE)
+  colnames(matrix.means) = c('1', '2', '3')
+  rownames(matrix.means) = c('A', 'B', 'C', 'D')
+  matrix.means
+}
+concrete.additive.means = estimated.means(model = concrete.additive, table = table.concrete)
+
+knitr::kable(estimated.means(model = concrete.additive, table = table.concrete))
+```
+
+**3**
+```{r}
+rat_wt <- read.csv("~/Downloads/rat_wt.csv")
+
+par(mfrow = c(1,2))
+with(rat_wt, interaction.plot(source, protein, gain))
+with(rat_wt, interaction.plot(protein, source, gain))
+```
+
+There is interaction in both plots, as the lines cross each other in both. 
+
+```{r}
+summary(aov(gain ~ (source * protein), data = rat_wt))
+```
+The interaction shown in the graphs above is significant, as the pvalues are all greater than alpha = .1
+
+```{r}
+rat.interaction = aov(gain ~ (source * protein), data = rat_wt)
+
+table.rats = expand.grid(source = unique(rat_wt$source), protein = unique(rat_wt$protein))
+
+estimated.means = function(model, table) {
+  matrix.means = matrix(predict(model, table), nrow = 2, ncol = 3, byrow = TRUE)
+  colnames(matrix.means) = c('beef', 'cereal', 'pork')
+  rownames(matrix.means) = c('high', 'low')
+  matrix.means
+}
+
+knitr::kable(estimated.means(model = rat.interaction, table = table.rats))
+```
+
+**4**
+```{r}
+set.seed(07201999)
+library(broom)
+
+simulation.anova = function(n = 10, mu_a = 0, mu_b = 0, mu_c = 0, sigma = 1, stat = TRUE) {
+  simulation.data = data.frame(
+    response = c(rnorm(n = n, mean = mu_a, sd = sigma),
+                 rnorm(n = n, mean = mu_b, sd = sigma),
+                 rnorm(n = n, mean = mu_c, sd = sigma)),
+    group = c(rep("A", times = n), rep("B", times = n), 
+              rep("C", times = n))
+  )
+  
+  aov.results = aov(response ~ group, data = simulation.data)
+  f.statistic = summary(aov.results)[[1]][["F value"]][[1]]
+  p.value = summary(aov.results)[[1]][["Pr(>F)"]][[1]]
+  
+ifelse(stat, f.statistic, p.value)
+  
+}
+
+y = c(0)
+x = c(0)
+for (i in 2:100){
+  p_vals = replicate(n = 500, simulation.anova(n=i,mu_a = -1, mu_b = 0, mu_c = 1,sigma = 1, stat = FALSE))
+  y = c(y, mean(p_vals < 0.05))
+  if(is.na(y[i])){
+    y[i] = 0
+  }
+  x=c(x,i)
+  if(y[i]>0.9){
+    break;
+  }
+  
+}
+
+plot(x[2:length(x)], y[2:length(x)], type = 'n', xlab = 'Sample Size', ylab = 'Power', xaxt = 'n', yaxt = 'n')
+axis(1, at = x[2:length(x)], las=2)
+axis(2, at = y[2:length(x)], las=2)
+lines(x[2:length(x)], y[2:length(x)], col = "blue")
+abline(h = 0.9)
+```
+
+The line meets the 90% confidence line a bit more than halfway between 7 and 8, so we choose 8 as the sample size. 
+
+**5**
+```{r}
+set.seed(07201999)
+
+simulation.anova = function(mu_a = 0, mu_b = 2, n_a = 5, n_b = 5, sigma = 1, stat = TRUE) {
+  simulation.data = data.frame(
+    response = c(rnorm(n = n_a, mean = mu_a, sd = sigma),
+                 rnorm(n = n_b, mean = mu_b, sd = sigma)),
+    group = c(rep('A', times = n_a), rep('B', times = n_b))
+  )
+  
+  aov.results = aov(response ~ group, data = simulation.data)
+  f.statistic = summary(aov.results)[[1]][['F value']][[1]]
+  p.value = summary(aov.results)[[1]][['Pr(>F)']][[1]]
+  
+  ifelse(stat, f.statistic, p.value)
+  
+}
+
+par(mfrow = c(1,1))
+mean.pvalues = rep(0,9)
+x= c(1,2,3,4,5,6,7,8,9)
+
+for(a in x){
+  b = 10 - a
+  p.values = replicate(n = 500, simulation.anova(mu_a = 0, mu_b = 2, n_a = a, n_b = b, sigma = 1, stat = FALSE))
+  
+  mean.pvalues[a] = mean(p.values < .05)
+}
+
+plot(x, mean.pvalues, type = 'n', xlab = 'Sample Size', ylab = 'Power', main = 'Power vs. Balance', xaxt = 'n')
+axis(1, at = x, las = 2)
+lines(x, mean.pvalues)
+abline(v = 5)
+```
+
+From this graph, we see that Balance gives us the best power. 

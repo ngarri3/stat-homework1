@@ -1,0 +1,253 @@
+---
+title: "hw10_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+library(faraway)
+library(lmtest)
+
+life_tv_regression = lm(life ~ tv, data = tvdoctor)
+plot(life ~ tv, data = tvdoctor, main = 'Tv vs. Life', pch = 16)
+abline(life_tv_regression, col = 'red')
+```
+
+Assumption Checking:
+```{r}
+plot(fitted(life_tv_regression), resid(life_tv_regression), ylab = 'Residuals', xlab = 'Fitted', main = 'Fitted vs. Residuals', pch = 16, col = 'blue')
+abline(h = 0, lty = 2, col = 'darkorange', lwd = 2)
+
+qqnorm(resid(life_tv_regression), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(life_tv_regression), col = 'orange')
+```
+
+The Fitted vs Residuals plot shows that the constant variance assumption is not violated, nor is the linearity assumption violated, because  the spread is relatively consistent for most points. The Q-Q plot shows that the normality assumption is also violated.
+
+**1.b**
+```{r}
+fitted_degree_3 = lm(life ~ tv + I(tv**2) + I(tv**3), data = tvdoctor)
+fitted_degree_5 = lm(life ~ tv + I(tv**2) + I(tv**3) + I(tv**4) + I(tv**5), data = tvdoctor)
+fitted_degree_7 = lm(life ~ tv + I(tv**2) + I(tv**3) + I(tv**4) + I(tv**5) +I(tv**6) + I(tv**7), data = tvdoctor)
+
+plot(fitted(fitted_degree_3), resid(fitted_degree_3), ylab = 'Residuals', xlab = 'Fitted', main = 'Degree 3', col = 'blue', pch = 16)
+abline(h = 0, col = 'orange', lty = 2)
+
+plot(fitted(fitted_degree_5), resid(fitted_degree_5), ylab = 'Residuals', xlab = 'Fitted', main = 'Degree 5', col = 'blue', pch = 16)
+abline(h = 0, col = 'orange', lty = 2)
+
+plot(fitted(fitted_degree_7), resid(fitted_degree_7), ylab = 'Residuals', xlab = 'Fitted', main = 'Degree 7', col = 'blue', pch = 16)
+abline(h = 0, col = 'orange', lty = 2)
+```
+
+The plots show that the model of Degree 3 is the only model that violates the constant variance assumption. 
+
+```{r}
+anova(fitted_degree_5, fitted_degree_7)
+```
+The p value is high, so the model of Degree 5 is the best option.
+
+```{r}
+qqnorm(resid(fitted_degree_5), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(fitted_degree_5), col = 'orange')
+```
+
+The Normal Q-Q Plot is very normal looking, meaning that the normality assumption is not violated.
+
+```{r}
+tvdoctor[cooks.distance(fitted_degree_5) > 4 / length(cooks.distance(fitted_degree_5)), ]
+```
+
+The influential points are Bangladesh, Ethiopia, Kenya, KoreaNorth, and Myanmar. 
+
+**2.a**
+```{r}
+library(MASS)
+?mammals 
+
+range(mammals$body)
+```
+ The smallest body weight is .005 kg and the largest body weight is 6654 kg
+
+**2.b**
+```{r}
+range(mammals$brain)
+```
+ The smallest brain weight is .14 g and the largest brain weight is 5712 g
+
+**2.c**
+```{r}
+plot(mammals$brain ~ mammals$body, ylab = 'Average Brain Weight', xlab = 'Average Body Weight', main = 'Avg Brain Weight vs. Avg Body Weight', col = 'blue', pch = 16)
+```
+
+**2.d**
+```{r}
+brain_body_model = lm(brain ~ body, data = mammals)
+summary(brain_body_model)
+```
+The SLR model is significant
+
+```{r}
+plot(fitted(brain_body_model), resid(brain_body_model), ylab= 'Residuals', xlab = 'Fitted', main = 'Fitted vs. Residuals', col = 'blue', pch = 16)
+abline(h = 0, lty = 2, col = 'orange')
+
+qqnorm(resid(brain_body_model), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(brain_body_model), col = 'orange')
+```
+
+The Fitted vs. Residual plot indicates that the assumption of constant variation and linearity is violated, and the Normal Q-Q Plot shows that the normality asumption is violated. 
+
+```{r}
+log_rule = lm(log(brain) ~ body, data = mammals)
+plot(fitted(log_rule), resid(log_rule), ylab = 'Residuals', xlab = "Fitted", main = 'Fitted vs. Residuals', col = 'blue', pch = 16)
+abline(h = 0, lty = 2, col = 'orange')
+```
+
+The log rule seemed to help a bit, but it is still not perfect. 
+
+**2.e**
+```{r}
+log_body_model = lm(brain ~ log(body), data = mammals)
+boxcox(log_body_model, lambda = seq(-.25, .25, by = .05), plotit = TRUE)
+```
+
+The Box- Cox method shows that lambda is about zero at the maximum, which means that log(body weight) is the reccomnded transformation of the response variable.
+
+**2.f**
+```{r}
+log_both_model = lm(log(brain) ~ log(body), data = mammals)
+
+plot(log(brain) ~ log(body), data = mammals, main = 'log(brain weight) vs. log(body weight)', col = 'blue', pch = 16)
+abline(log_both_model, col = 'orange')
+
+plot(fitted(log_both_model), resid(log_both_model), ylab = 'Residuals', xlab = 'Fitted', main = 'Fitted vs. Residuals', col = 'blue', pch = 16)
+abline(h = 0, lty = 2, col = 'orange')
+```
+
+A linear relationship seems to be appropriate
+
+**2.g**
+```{r}
+qqnorm(resid(log_both_model), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(log_both_model), col = 'orange')
+```
+
+The Q-Q plot shows that the normality assumption is not violated. 
+
+**2.h**
+```{r}
+w = 13.4 * 0.453592 #converting to kg
+pikachu = data.frame(body = w)
+exp(predict(log_both_model, pikachu, interval = 'prediction', level = .99))
+```
+The prediction for Pikachu's weight is 32.83038 kg, with a prediction interval of [5.0996, 211.3566]
+
+**3.a**
+```{r}
+epa2015 <- read.csv("~/Downloads/epa2015.csv")
+epa2015$type = as.factor(epa2015$type)
+co2_int = lm(CO2 ~ horse * type, data = epa2015)
+
+plot(fitted(co2_int), resid(co2_int), ylab = 'Residuals', xlab = 'Fitted', col = 'blue', pch = 16, cex = .5)
+abline(h = 0, lty = 2, col = 'orange')
+
+```
+
+The constant variance assumption has been violated.
+
+**3.b**
+```{r}
+co2_int_log = lm(log(CO2) ~ horse * type, data = epa2015)
+
+plot(fitted(co2_int_log), resid(co2_int_log), ylab = 'Residuals', xlab = 'Fitted', col = 'blue', pch = 16, cex = .5)
+abline(h = 0, lty = 2, col = 'orange')
+```
+
+The log model does not violate the constant variance assumption from x = 5 to x = 6.5. There are about 12 points after x = 6.5 that violate this assumption, but for the most part this model does not violate it. 
+
+```{r}
+qqnorm(resid(co2_int_log), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(co2_int_log), col = 'orange')
+
+shapiro.test(resid(co2_int_log))
+```
+
+The Q-Q plot shows that it does violate the normality assumption. The Shapiro test also supports this conclusion, as the pvalue is very small.
+
+**3.c**
+```{r}
+co2_horse_model = lm(log(CO2) ~ horse * type + I(horse**2), data = epa2015)
+
+plot(fitted(co2_horse_model), resid(co2_horse_model), ylab = 'Residuals', xlab = 'Fitted', col = 'blue', pch = 16, cex = .5)
+abline(h = 0, lty = 2, col = 'orange')
+```
+
+This has been the best model so far. It does not violate the constant variance assumption. 
+
+```{r}
+qqnorm(resid(co2_horse_model), col = 'blue', main = 'Normal Q-Q Plot')
+qqline(resid(co2_horse_model), col = 'orange')
+
+shapiro.test(resid(co2_horse_model))
+```
+
+The Q-Q test and the Shapiro test confirm that the normality assumption is violated. 
+
+**3.d**
+```{r}
+summary(co2_horse_model)
+
+epa2015[cooks.distance(co2_horse_model) > 4 / length(cooks.distance(co2_horse_model)), ]
+```
+
+The summary shows that interaction terms here are not significant. There are 163 influential points. 
+
+**4.a**
+```{r}
+num_sims = 1000
+rmse_slr = rep(0, num_sims)
+rmse_big = rep(0, num_sims)
+pval = rep(0, num_sims)
+birthday = 19990720
+set.seed(birthday)
+
+n=40
+x = runif(n, 0 , 10)
+
+for(i in 1:num_sims){
+  y = 3 - 4 * x + rnorm(n, 0 , 3)
+  fit_slr = lm(y ~ x)
+  fit_big = lm(y ~ poly(x, 10))
+  rmse_slr[i] = mean(resid(fit_slr)**2)
+  rmse_big[i] = mean(resid(fit_big)**2)
+  pval[i] = anova(fit_slr, fit_big)$'Pr(>F)'[2]
+}
+
+```
+
+**4.b**
+```{r}
+mean(rmse_slr < rmse_big)
+```
+None of the RMSEs of the SLR are smaller than the big model. 
+
+**4.c**
+```{r}
+mean(pval < .05)
+```
+
+**4.d**
+```{r}
+library(ggplot2)
+data.frame.4d = data.frame(cbind(x, y))
+
+ggplot(data = data.frame.4d, aes(x = x, y = y)) + stat_smooth(method = 'lm', se = FALSE, col = 'blue', formula = y ~ x) + stat_smooth(method = 'lm', se = FALSE, col = 'orange', formula = y ~ poly(x, 10)) + geom_point(col = 'black')
+```
+
+Bigger is not always better. It can overfit. 

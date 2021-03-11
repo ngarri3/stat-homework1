@@ -1,0 +1,229 @@
+---
+title: "hw05_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "10/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+nutrition <- read.csv("~/Downloads/nutrition.csv", comment.char="#")
+
+calModel = lm(Calories ~ Carbs + Fat + Protein, data = nutrition)
+nullModel = lm(Calories ~ 1, data = nutrition)
+
+Ftest = anova(nullModel, calModel)
+Ftest
+```
+Null Hypothesis: Beta1, Beta2, & Beta3 = 0,
+Alternative Hypothesis: atleast one of Beta1, Beta2, Beta3 does not = 0,
+Test Stat: 152445,
+P Value: 2.2e-16,
+Decision: reject null hypothesis, as the p value < alpha = .01,
+Conclusion: There is not sufficient evidence to say that the average change in calories per unit increase of carbs, fat, and protein is 0. Therefore we can say that at least one of these variables has an average change in calories > 0 per one unit increase.
+
+**1.b**
+```{r}
+output = summary(calModel)$coeff[,1]
+output
+```
+Beta0 : the intercept, aka calories when all carbs, protein, and fat = 0, is 3.768066.
+Beta1 : the average increase of calories per one unit increase of carbs is 3.773605.
+Beta2 : the average increase of calories per one unit increase of fat is 8.804109.
+Beta3 : the average increase of calories per one unit increase of protein is 3.967269.
+
+**1.c**
+```{r}
+Big.Mac = output['(Intercept)']+ (output['Carbs']* 47) + (output['Fat']* 28) + (output['Protein']* 25)
+Big.Mac
+```
+This predicts that there are 526.8242 calories in a Big Mac
+
+**1.d**
+```{r}
+sy = sd(nutrition$Calories)
+sy
+se = summary(calModel)$sigma
+se
+```
+Sy = 179.2444, meaning that the estimated average dispersion from the mean is 179.2444 calories.
+Se = 18.89119, which represents the reliablility of the mean in this sample.
+
+**1.e**
+```{r}
+summary(calModel)$r.squared
+```
+R^2 = .9888987. This is very close to a value of 1, meaning that the relationship described by the linear model between calories and carbs, fat, and protein is very strong. 
+
+**1.f**
+```{r}
+confint(calModel, level = .9)[3,]
+```
+This means that the CI is [8.77893, 8.829288], meaning that there is a 90% chance that the average increase of calories per one unit increase of fat is contained in that interval. 
+
+**1.g**
+```{r}
+confint(calModel, level = .95)[1,]
+```
+This means that the CI is [2.802779, 4.733353], meaning that there is a 95% chance that the intercept, aka calories when all carbs, protein, and fat = 0, is is contained in that interval.
+
+**1.h**
+```{r}
+fries = data.frame(Carbs = 30, Fat = 11, Protein =2)
+predict(calModel, newdata = fries, interval = 'confidence', level = .99)
+```
+The CI is [220.8924, 222.6195], meaning that there s a 99% chance that the calorie content of the fries is contained in this interval. The mean is 221.7559
+
+**1.i**
+```{r}
+healthy = data.frame(Carbs = 11, Fat = 1.5, Protein =1)
+predict(calModel, newdata = healthy, interval = 'prediction', level = .90)
+```
+The CI is [31.3649, 93.53739], meaning that there is a 90% chance that the calorie content of the helthy item is contained in this interval. The estimate is 62.45115. 
+
+**2.a**
+```{r}
+calModel2 = lm(Calories ~ Carbs + Sodium + Fat + Protein, data = nutrition)
+
+Ftest = anova(nullModel, calModel2)
+Ftest
+```
+Null Hypothesis: Beta1, Beta2, Beta3, & Beta4 = 0,
+Alternative Hypothesis: atleast one of Beta1, Beta2, Beta3, Beta4 does not = 0,
+Test Stat: 114353,
+P Value: 2.2e-16,
+Decision: reject null hypothesis, as the p value < alpha = .01,
+Conclusion: There is not sufficient evidence to say that the average change in calories per unit increase of carbs, fat, protein, and sodium is 0. Therefore we can say that at least one of these variables has an average change in calories > 0 per one unit increase.
+
+**2.b**
+```{r}
+summary(calModel2)$coeff
+```
+**Beta0** : the intercept, aka calories when all carbs, protein, and fat = 0
+  null: Beta0 = 0, alternative: Beta0 does not = 0, test stat: 7.454546, pval: 1.052621e-13, decision: reject null
+  
+**Beta1** : the average increase of calories per one unit increase of carbs
+  null: Beta1 = 0, alternative: Beta1 does not = 0, test stat: 388.717271, pval: 0, decision: reject null
+  
+**Beta2** : the average increase of calories per one unit increase of sodium 
+  null: Beta2 = 0, alternative: Beta2 does not = 0, test stat: 1.362579, pval: 1.730749e-01, decision: FAIL to reject null
+  
+**Beta3** : the average increase of calories per one unit increase of fat
+  null: Beta3 = 0, alternative: Beta3 does not = 0, test stat: 575.261702, pval: 0, decision: reject null
+  
+**Beta4** : the average increase of calories per one unit increase of protein
+  null: Beta4 = 0, alternative: Beta4 does not = 0, test stat: 150.533385, pval: 0, decision: reject null
+  
+  
+**2.c**
+The biggest piece of info I got from part 2.b is that we fail to reject the null hypothesis for sodium, meaning there is not sufficient evidence to suggest a strong linear relationship between sodium and calories. Because of this, I do not prefer the model from part 2.a, as sodium is not helpful in predicting calorie content and therefore not necessary to include.
+
+**3.a**
+```{r}
+goalies_cleaned <- read.csv("~/Downloads/goalies_cleaned.csv", comment.char="#")
+
+winModel = lm(W ~ ., data = goalies_cleaned)
+nullModel = lm(W ~ 1, data = goalies_cleaned)
+
+Ftest = anova(nullModel, winModel)
+Ftest
+```
+Null Hypothesis: all Beta Values = 0,
+Alternative Hypothesis: atleast one of Beta does not = 0,
+Test Stat: 3938.3,
+P Value: 2.2e-16,
+Decision: reject null hypothesis, as the p value < alpha = .1,
+Conclusion: There is not sufficient evidence to say all of the Beta values are equal to 0. Therefore we can say that at least one of these variables has a significant relationship with number of wins. 
+
+**3.b**
+```{r}
+rmse = sqrt(mean(winModel$residuals^2))
+rmse
+se = summary(winModel)$sigma
+se
+```
+The RMSE and the standard error are very close but not exactly equivalent
+
+**3.c**
+```{r}
+winModel2 = lm(W ~ GA + GAA + SV + SV_PCT, data = goalies_cleaned)
+
+rmse = sqrt(mean(winModel2$residuals^2))
+rmse
+```
+
+**3.d**
+```{r}
+winModel3 = lm(W ~ GAA + SV_PCT, data = goalies_cleaned)
+
+rmse = sqrt(sum((winModel3$residuals)^2)/ (nrow(goalies_cleaned) - length(coef(winModel3))))
+rmse
+```
+
+**3.e**
+the model from part 3.a is the most helpful for predicting wins, as it has the lowest rmse and therefore is more reliable in it outputs. This is the model that includes all predictors.
+
+**3.f**
+```{r}
+anova(winModel2, winModel3)
+```
+Null Hypothesis: no relationship between winModel2 and winModel3,
+Alternative Hypothesis: there is a relationship between winModel2 and winModel3,
+Test Stat: 3599.8,
+P Value: 2.2e-16,
+Decision: reject null hypothesis, as the p value < alpha = .1,
+Conclusion: There is not sufficient evidence to say that there is a significant relationship between the two models. We can also say that SV and GAA are significant
+
+**4.a**
+```{r}
+library(faraway)
+?prostate
+
+n = nrow(prostate)
+y = as.matrix(cbind(rep(1, n), prostate[,1-ncol(prostate) - 1]))
+z = prostate$lpsa
+
+beta_hat_no_lm = as.vector(solve(t(y) %*% y) %*% t(y) %*% z)
+beta_hat_no_lm
+sum(beta_hat_no_lm)
+```
+
+**4.b**
+```{r}
+prostateModel = lm(lpsa ~ ., data = prostate)
+beta_hat_lm = as.vector(coef(prostateModel))
+beta_hat_lm
+sum(beta_hat_lm)
+```
+
+**4.c**
+```{r}
+all.equal(beta_hat_no_lm, beta_hat_lm)
+```
+
+**4.d**
+```{r}
+x = y %*% solve(t(y) %*% y) %*% t(y) %*% z
+
+se = sqrt(t(z - x) %*% (z - x)/ (n - length(coef(prostateModel))))
+se
+all.equal(summary(prostateModel)$sigma, as.vector(se))
+```
+
+**4.e**
+```{r}
+denominator = sum((z - mean(z))^2) 
+numerator = sum((x - mean(z))^2) 
+
+rsquared = numerator / denominator
+rsquared
+
+all.equal(rsquared, summary(prostateModel)$r.squared)
+```
+
+
+

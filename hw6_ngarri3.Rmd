@@ -1,0 +1,169 @@
+---
+title: "hw6_ngarri3"
+author: "Nora Garrity- ngarri3"
+date: "10/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1.a**
+```{r}
+library(faraway)
+?prostate
+
+all.predictor.model = lm(lpsa ~ ., data = prostate)
+
+lcavol.model = lm(lpsa~ lcavol, data = prostate)
+
+lweight.lcavol.model = lm(lpsa~ lcavol + lweight, data = prostate)
+
+age.lweight.lcavol.model = lm(lpsa~ lcavol + lweight + age, data = prostate)
+  
+svi.age.lweight.lcavol.model =  lm(lpsa~ lcavol + lweight + age + svi, data = prostate)
+```
+
+I argue that the model that uses all possible predictors will be the best for explaining the response, because it takes into account all possible influences on the response. To test with ANOVA: 
+
+```{r}
+anova(lcavol.model, lweight.lcavol.model)
+anova(lweight.lcavol.model, age.lweight.lcavol.model)
+anova(lweight.lcavol.model, svi.age.lweight.lcavol.model)
+anova(svi.age.lweight.lcavol.model, all.predictor.model)
+```
+The method that I used was to start with the model with the least amount of predictors and work my way through, since my hypothesis was that the model with the most predictors would be the best. This way I can sequentially eliminate the worse models as I go. So, the first trial I compared the lcavol model and the lcavol + lweight model. I was able to effectively eliminate the lcavol model because the pvalue of this test was <.01, which is the lowest alpha value I'd say counts as significant. Next, I tested the lcavol + lweight model against the lcavol + lweight + age model, and was able to eliminate the lcavol + lweight + age model because the pvalue was high. Next, I tested the lcavol + lweight model against the lcavol + lweight + age + svi model, and was able to eliminate the lcavol + lweight model because the pvalue was low. Next, I tested the lcavol + lweight + age + svi againt the all predictor model and was able to eliminate the lcavol + lweight + age + svi model because the pvalue was high. Therefore, the all predictor model has been proven to be the best at explaining the response. 
+
+
+**2**
+```{r}
+library(MASS)
+?Boston
+set.seed(42)
+
+train_index = sample(1:nrow(Boston), 400)
+
+train_data = Boston[train_index,]
+test_data = Boston[-train_index,]
+
+model.all.predictor = lm(medv ~ ., data = train_data) 
+
+model.crim = lm(medv ~ crim, data = train_data)
+
+model.crim.rm = lm(medv ~ crim + rm, data = train_data)
+
+model.crim.rm.dis = lm(medv ~ crim + rm + dis, data = train_data)
+
+model.best = lm(medv ~ crim + rm + dis + lstat+ rad + ptratio + black + zn + chas + nox + tax, data = train_data)
+```
+
+```{r}
+rmse = function(y, y_hat) {
+  sqrt(mean((y - y_hat)**2))
+}
+
+rmse(train_data$medv, predict(model.all.predictor, train_data))
+rmse(test_data$medv, predict(model.all.predictor, test_data))
+
+rmse(train_data$medv, predict(model.crim, train_data))
+rmse(test_data$medv, predict(model.crim, test_data))
+
+rmse(train_data$medv, predict(model.crim.rm, train_data))
+rmse(test_data$medv, predict(model.crim.rm, test_data))
+
+rmse(train_data$medv, predict(model.crim.rm.dis, train_data))
+rmse(test_data$medv, predict(model.crim.rm.dis, test_data))
+
+rmse(train_data$medv, predict(model.best, train_data))
+rmse(test_data$medv, predict(model.best, test_data))
+```
+My model titled model.best can be considered better than the model with all predictors because its RMSE for test data is lower than the all predictor model and its RMSE for train data is almost the same. 
+
+**3.a**
+```{r}
+set.seed(42)
+n = 25
+
+x0 = rep(1,n)
+x1 = runif(n, 0, 10)
+x2 = runif(n, 0, 10)
+x3 = runif(n, 0, 10)
+x4 = runif(n, 0, 10)
+
+x = cbind(x0, x1, x2, x3, x4)
+c = solve(t(x) %*% x)
+y = rep(0,n)
+
+ex_4_data = data.frame(y, x1, x2, x3, x4)
+
+diag(c)
+ex_4_data[10,]
+```
+
+**3.b**
+```{r}
+beta_hat_1 = rep(0, 1500)
+beta_2_pval = rep(0, 1500)
+beta_3_pval = rep(0, 1500)
+```
+
+**3.c**
+```{r}
+b0 = 2
+b1 = 3
+b2 = 4
+b3 = 0 
+b4 = 1
+sigma = sqrt(16)
+
+
+for(i in 1: 1500){
+  eps = rnorm(n, 0, sigma)
+  ex_4_data$y = (b0*x0) + (b1*x1) + (b2*x2) + (b3*x3) + (b4*x4) + eps
+  fit_data = lm(y ~ x1 + x2 + x3 + x4, data = ex_4_data)
+  beta_hat_1[i] = coef(fit_data)[2]
+  beta_2_pval[i] = summary(fit_data)$coef[3,4]
+  beta_3_pval[i] = summary(fit_data)$coef[4,4]
+}
+```
+
+**3.d**
+```{r}
+mean_beta_hat_1 = b1
+mean_beta_hat_1
+variance_beta_hat_1 = sigma **2 * c[2,2]
+variance_beta_hat_1
+```
+BetaHat1 follows the normal distribution with mean = 3 and var = 0.07316889
+
+**3.e**
+```{r}
+mean(beta_hat_1)
+var(beta_hat_1)
+```
+These values are very close to what we'd expect! The true distribution, calculated in part d, has mean = 3 and variance = 0.07316889, and the mean and variance calculated in part e are extremely close to these values.
+
+```{r}
+hist(beta_hat_1, prob = TRUE, xlab = 'beta_hat_1', ylab = 'frequency', main= 'Beta Hat 1 Distribution', breaks = 40, ylim = c(0,2))
+curve(dnorm(x, mean = b1, sd = sqrt(sigma**2 * c[2,2])), col = 'blue', add = TRUE)
+```
+
+The curve does seem to match the histogram, yes.
+
+**3.f**
+```{r}
+mean(beta_3_pval < .05)
+```
+Yes, this is what I'd expect because b3 = 0, meaning that I'd only expect a small proportion of pvalues to be less than .05 due to chance
+
+**3.g**
+```{r}
+mean(beta_2_pval < .05)
+```
+Yes, this is what I'd expect because b2 = 4, which is not zero, meaning that we'd expect all of the pvalues to be less than .05
+
+
+
+
+
